@@ -19,6 +19,6 @@ observe_admin_menu(admin_menu, Acc, Context) ->
      #menu_item{id=admin_autoshop,
                 parent=admin_modules,
                 label=?__("Autoshop", Context),
-                url={admin_autoshop},
+                url={admin_autoshop_import},
                 visiblecheck={acl, use, ?MODULE}}   
      |Acc].

@@ -4,8 +4,8 @@
 
 {% block content %}
 
-{% wire id="admin-csv-import" type="submit" postback="admin_csv_import" %}
-<form name="admin-csv-import" id="admin-csv-import" method="POST" action="postback">
+{% wire id="admin-autoshop-csv-import" type="submit" postback="autoshop_csv_import" %}
+<form name="admin-autoshop-csv-import" id="admin-autoshop-csv-import" method="POST" action="postback">
 
     <div class="admin-header">
 
