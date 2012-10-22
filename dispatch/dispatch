@@ -1,0 +1,3 @@
+[
+	{ admin_autoshop, [ "admin", "autoshop" ], resource_template, [ { template, "admin_autoshop.tpl" } ] }
+].
