@@ -12,7 +12,6 @@ import_row(ProvId, Row, Context) ->
 	handle_exist_check(get_item_id(Ps, Context), Ps, Context).
 
 handle_exist_check({ok, Id}, Ps, Context) ->
-	io:format("Already exist: ~p~n", [Id]),
 	z_db:update(?ITEMS, Id, Ps, Context);
 handle_exist_check({error, not_found}, Ps, Context) ->
 	z_db:insert(?ITEMS, Ps, Context);

@@ -52,20 +52,31 @@ process_file(ProvId, Props, Target, Context) ->
 	handle_spawn(ProvId, Props, Target, Context),
     z_render:growl(?__("Please hold on while the file is importing. You will get a notification when it is ready.", Context), Context).
 	
+-record(parser_state, {
+		filename,
+		file_handle,
+		provider,
+		props,
+		context
+	}).
+
 handle_spawn(ProvId, Props, Target, Context) ->
 	{ ok, HFile } = file:open(Target, [read]),
-	spawn(fun() -> 
-		handle_parse_line(
-			autoshop_csv_parser:parse_line(HFile, Props), 
-			{ ProvId, HFile, Props, z_acl:sudo(z_context:new(Context)) }
-		)
-	end).
+	S = #parser_state{
+		filename = Target,
+		file_handle = HFile,
+		provider = ProvId,
+		props = Props,
+		context = z_acl:sudo(z_context:new(Context))
+	},
+	spawn(fun() -> handle_parse_line( autoshop_csv_parser:parse_line(HFile, Props), S) end).
 
-handle_parse_line({ error, eof }, _State) ->
-	undefined;
-handle_parse_line({ ok, Line }, State = { ProvId, File, Props, Context }) ->
+handle_parse_line({ error, eof }, #parser_state{ filename = F, file_handle = HF }) ->
+	file:close(HF),
+	file:delete(F);
+handle_parse_line({ ok, Line }, S = #parser_state{ provider = ProvId, file_handle = File, props = Props, context = Context }) ->
 	autoshop_import:import_row(ProvId, Line, Context),
-	handle_parse_line(autoshop_csv_parser:parse_line(File, Props), State).
+	handle_parse_line(autoshop_csv_parser:parse_line(File, Props), S).
 
 
 extract_provider_id(Context) -> 

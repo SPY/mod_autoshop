@@ -1,6 +1,8 @@
 -module(autoshop_csv_parser).
 -export([ parse_file/2, parse_line/2 ]).
 
+-include_lib("zotonic.hrl").
+
 parse_file(Filename, PropsList) ->
 	{ ok, HFile } = file:open(Filename, [read]),
 	Lines = do_parse(HFile),
@@ -9,7 +11,8 @@ parse_file(Filename, PropsList) ->
 parse_line(HFile, Props) ->
 	case file:read_line(HFile) of 
 		eof -> { error, eof };
-		{ ok, Line } -> { ok, safe_zip(Props, parse_line(Line)) }
+		{ ok, Line } -> { ok, safe_zip(Props, parse_line(Line)) };
+		Err -> ?ERROR("Error in parse: ~p~n", [Err])
 	end.
 
 do_parse(HFile) ->
