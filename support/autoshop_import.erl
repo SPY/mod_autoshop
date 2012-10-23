@@ -40,7 +40,7 @@ is_item_prop(_) -> false.
 
 parse_prop({provider, V}) -> z_convert:to_integer(V);
 parse_prop({keyprop, V}) -> z_convert:to_list(V);
-parse_prop({price, V}) -> z_convert:to_float(V);
+parse_prop({price, V}) -> to_number(V);
 parse_prop({number, V}) -> normalize_number(V);
 parse_prop({_P, V}) -> V.
 
@@ -68,3 +68,18 @@ normalize_number([ $' | T], Acc) ->
     normalize_number(T, [ $\\, $' | Acc]);
 normalize_number([C | T], Acc) ->
     normalize_number(T, [ C | Acc ]).
+
+to_number(NumString) -> 
+	Num = normalize(NumString),
+	try z_convert:to_integer(Num)
+	catch
+		_:_ ->
+			try list_to_float(Num)
+			catch _:_ -> 0 end
+	end.
+
+normalize(Num) when is_binary(Num) ->
+	normalize(binary_to_list(Num));
+normalize(Num) when is_list(Num) ->
+	z_string:replace(Num, ",", ".");
+normalize(Num) -> Num.
