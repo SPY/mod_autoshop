@@ -76,9 +76,10 @@ handle_spawn(ProvId, Props, Target, Context) ->
 		handle_parse_line( autoshop_csv_parser:parse_line(HFile, Props), S) 
 	end).
 
-handle_parse_line({ error, eof }, #parser_state{ filename = F, file_handle = HF }) ->
+handle_parse_line({ error, eof }, #parser_state{ filename = F, file_handle = HF, parsed = P }) ->
 	file:close(HF),
-	file:delete(F);
+	file:delete(F),
+	io:format("Parsed ~p lines~n", [P]);
 handle_parse_line({ ok, Line }, S = #parser_state{ provider = ProvId, file_handle = File, props = Props, context = Context }) ->
 	autoshop_import:import_row(ProvId, Line, Context),
 	handle_parse_line(autoshop_csv_parser:parse_line(File, Props), S#parser_state{ parsed = S#parser_state.parsed + 1});
