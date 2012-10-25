@@ -3,8 +3,7 @@
 -export([event/2, html/1]).
 
 -include_lib("html_controller.hrl").
-
--define (BUFFER_SIZE, 256*1024).
+-include ("../include/autoshop.hrl").
 
 %% =================================
 %% form handlers
@@ -53,39 +52,16 @@ move_tmp_file_to_processing(OriginalFilename, TmpFile, Context) ->
 process_file(ProvId, Props, Target, Context) ->
 	handle_spawn(ProvId, Props, Target, Context),
     z_render:growl(?__("Please hold on while the file is importing. You will get a notification when it is ready.", Context), Context).
-	
--record(parser_state, {
-		filename,
-		file_handle,
-		provider,
-		props,
-		context,
-		parsed = 0
-	}).
 
 handle_spawn(ProvId, Props, Target, Context) ->
 	spawn(fun() -> 
-		{ ok, HFile } = file:open(Target, [read, {read_ahead, ?BUFFER_SIZE}]),
-		S = #parser_state{
+		autoshop_import_worker:start(#parser_state{
 			filename = Target,
-			file_handle = HFile,
 			provider = ProvId,
 			props = Props,
 			context = z_acl:sudo(z_context:new(Context))
-		},
-		handle_parse_line( autoshop_csv_parser:parse_line(HFile, Props), S) 
+		})
 	end).
-
-handle_parse_line({ error, eof }, #parser_state{ filename = F, file_handle = HF, parsed = P }) ->
-	file:close(HF),
-	file:delete(F),
-	io:format("Parsed ~p lines~n", [P]);
-handle_parse_line({ ok, Line }, S = #parser_state{ provider = ProvId, file_handle = File, props = Props, context = Context }) ->
-	autoshop_import:import_row(ProvId, Line, Context),
-	handle_parse_line(autoshop_csv_parser:parse_line(File, Props), S#parser_state{ parsed = S#parser_state.parsed + 1});
-handle_parse_line(_All, #parser_state{ parsed = P }) ->
-	io:format("Parsed ~p lines~n", [P]).
-
 
 extract_provider_id(Context) -> 
 	z_context:get_q("provider", Context).

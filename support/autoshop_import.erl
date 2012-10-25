@@ -12,9 +12,11 @@ import_row(ProvId, Row, Context) ->
 	handle_exist_check(get_item_id(Ps, Context), Ps, Context).
 
 handle_exist_check({ok, Id}, Ps, Context) ->
-	z_db:update(?ITEMS, Id, Ps, Context);
+	z_db:update(?ITEMS, Id, Ps, Context),
+	{updated, Id};
 handle_exist_check({error, not_found}, Ps, Context) ->
-	z_db:insert(?ITEMS, Ps, Context);
+	{ok, Id } = z_db:insert(?ITEMS, Ps, Context),
+	{inserted, Id};
 handle_exist_check(_, _Ps, _Context) ->
 	io:format("Unexpected error during import~n", []),
 	undefined.
