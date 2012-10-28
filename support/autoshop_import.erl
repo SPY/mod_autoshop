@@ -25,7 +25,7 @@ make_props(ProvId, Props, Context) ->
 	Key = z_convert:to_atom(m_rsc:p(ProvId, key_prop, number, Context)), 
 	lists:map(
 		fun(S = {P, _V}) -> {P, parse_prop(S)} end,
-		[ { provider, ProvId }, { keyprop, proplists:get_value(Key, Props) } | Props ]
+		[ { provider, ProvId }, { keyprop, proplists:get_value(Key, Props) ++ ":" ++ proplists:get_value(prov_code, Props) } | Props ]
 	).
 
 filter_props(Props) ->
@@ -42,13 +42,13 @@ is_item_prop(_) -> false.
 
 parse_prop({provider, V}) -> z_convert:to_integer(V);
 parse_prop({keyprop, V}) -> z_convert:to_list(V);
-parse_prop({price, V}) -> to_number(V);
+parse_prop({price, V}) -> z_convert:to_float(V);
 parse_prop({number, V}) -> normalize_number(V);
 parse_prop({_P, V}) -> V.
 
 get_item_id(Props, Context) ->
-	R = z_db:equery("select id from " ++ ?ITEMS ++ " where provider=$1 and keyprop=$2 and number=$3", [
-			proplists:get_value(K, Props) || K <- [provider, keyprop, number]
+	R = z_db:equery("select id from " ++ ?ITEMS ++ " where provider=$1 and number=$2 and keyprop=$3", [
+			proplists:get_value(K, Props) || K <- [provider, number, keyprop]
 		], Context),
 	case R of 
 		{ok, _C, [{ Id }]} -> {ok, Id};
@@ -70,18 +70,3 @@ normalize_number([ $' | T], Acc) ->
     normalize_number(T, [ $\\, $' | Acc]);
 normalize_number([C | T], Acc) ->
     normalize_number(T, [ C | Acc ]).
-
-to_number(NumString) -> 
-	Num = normalize(NumString),
-	try z_convert:to_integer(Num)
-	catch
-		_:_ ->
-			try list_to_float(Num)
-			catch _:_ -> 0 end
-	end.
-
-normalize(Num) when is_binary(Num) ->
-	normalize(binary_to_list(Num));
-normalize(Num) when is_list(Num) ->
-	z_string:replace(Num, ",", ".");
-normalize(Num) -> Num.
