@@ -22,11 +22,19 @@ handle_exist_check(_, _Ps, _Context) ->
 	undefined.
 
 make_props(ProvId, Props, Context) ->
-	Key = z_convert:to_atom(m_rsc:p(ProvId, key_prop, number, Context)), 
 	lists:map(
 		fun(S = {P, _V}) -> {P, parse_prop(S)} end,
-		[ { provider, ProvId }, { keyprop, proplists:get_value(Key, Props) ++ ":" ++ proplists:get_value(prov_code, Props) } | Props ]
+		[ { provider, ProvId }, { keyprop, make_key_prop(ProvId, Props, Context) } | Props ]
 	).
+
+make_key_prop(ProvId, Props, Context) ->
+	Keys = get_key_props(ProvId, Context), 
+	lists:foldl(fun(K, V) -> V ++ ":" ++ proplists:get_value(K, Props) end, [], Keys ).
+
+get_key_props(ProvId, Context) ->
+	PropsString = binary_to_list(m_rsc:p(ProvId, key_prop, Context)),
+	RawProps = string:tokens(PropsString, "+"),
+	lists:map(fun list_to_atom/1, RawProps).
 
 filter_props(Props) ->
 	lists:filter(fun({P, _V}) -> is_item_prop(P) end, Props).
